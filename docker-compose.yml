@@ -1,0 +1,50 @@
+
+services:
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: always
+
+  ollama-pull:
+    image: ollama/ollama
+    depends_on:
+      - ollama
+    entrypoint: ["/bin/sh", "-c", "sleep 10 && OLLAMA_HOST=http://ollama:11434 ollama pull mistral"]
+    restart: "no"
+
+  schema-server:
+    build:
+      context: ./schema-server
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./data/schemas:/data/schemas
+    restart: always
+
+  values-server:
+    build:
+      context: ./values-server
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./data/values:/data/values
+    restart: always
+
+  bot-server:
+    build:
+      context: ./bot-server
+    ports:
+      - "5003:5003"
+    depends_on:
+      - ollama
+      - schema-server
+      - values-server
+    restart: always
+
+volumes:
+  ollama_data:
+
+    
